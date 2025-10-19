@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Một Món Quà Nhỏ ❤️</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            height: 100%;
+            width: 100%;
+        }
+        canvas {
+            display: block;
+        }
+        #page1 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100%;
+            cursor: pointer;
+            transition: opacity 1s ease-out;
+        }
+        #page1 .letter-icon {
+            font-size: 120px;
+            animation: bounce 2s infinite;
+        }
+        #page1 .message {
+            color: #fff;
+            font-family: 'Dancing Script', cursive;
+            font-size: 32px;
+            margin-top: 20px;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-30px);}
+            60% {transform: translateY(-15px);}
+        }
+        #page2 {
+            display: none;
+            height: 100%;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in;
+        }
+    </style>
+</head>
+<body>
+
+<div id="page1" onclick="showHeartPage()">
+    <div class="letter-icon">💌</div>
+    <div class="message">Hãy bấm vào bức thư</div>
+</div>
+
+<div id="page2">
+    </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script> <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
+
+<script>
+    // === HÀM CHUYỂN TRANG ===
+    function showHeartPage() {
+        const page1 = document.getElementById('page1');
+        const page2 = document.getElementById('page2');
+
+        page1.style.opacity = '0';
+        setTimeout(() => {
+            page1.style.display = 'none';
+            page2.style.display = 'block';
+            setTimeout(() => {
+                page2.style.opacity = '1';
+                startCameraAnimation(); // GỌI HÀM HOẠT ẢNH CAMERA
+            }, 50);
+        }, 1000);
+    }
+
+    // === TOÀN BỘ MÃ THREE.JS ===
+
+    // === 1. CÀI ĐẶT CƠ BẢN ===
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('page2').appendChild(renderer.domElement);
+    const initialCameraZ = 45; // Lưu vị trí ban đầu
+    camera.position.z = initialCameraZ;
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // === HÀM HOẠT ẢNH CAMERA (PHẦN MỚI) ===
+    function startCameraAnimation() {
+        controls.enabled = false; // Tắt điều khiển chuột
+
+        const targetPosition = { z: initialCameraZ * 2 }; // Lùi về sau x2
+        const targetRotation = { x: Math.PI / 16, y: Math.PI / 16 }; // Xoay nhẹ lên và sang trái
+
+        // Hoạt ảnh cho vị trí
+        new TWEEN.Tween(camera.position)
+            .to(targetPosition, 4000) // Thời gian 4 giây
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onComplete(() => {
+                controls.enabled = true; // Bật lại điều khiển khi xong
+            })
+            .start();
+
+        // Hoạt ảnh cho góc xoay
+        new TWEEN.Tween(camera.rotation)
+            .to(targetRotation, 4000)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .start();
+    }
+
+
+    // === 2. TRÁI TIM 3D ===
+    const heartParticles = 30000;
+    const heartPositions = [];
+    const heartScale = 15;
+    let particlesAdded = 0;
+    while (particlesAdded < heartParticles) {
+        const x = (Math.random() - 0.5) * 3;
+        const y = (Math.random() - 0.5) * 3;
+        const z = (Math.random() - 0.5) * 3;
+        const t1 = x*x + (9/4)*y*y + z*z - 1;
+        if (Math.pow(t1, 3) - (x*x*z*z*z) - (9/80)*y*y*z*z*z < 0) {
+            heartPositions.push(x*heartScale, y*heartScale, z*heartScale);
+            particlesAdded++;
+        }
+    }
+    const heartGeometry = new THREE.BufferGeometry();
+    heartGeometry.setAttribute('position', new THREE.Float32BufferAttribute(heartPositions, 3));
+    const heartMaterial = new THREE.PointsMaterial({ color: 0xff69b4, size: 0.1, transparent: true, blending: THREE.AdditiveBlending });
+    const heart = new THREE.Points(heartGeometry, heartMaterial);
+    heart.rotation.x = -Math.PI / 2;
+    heart.position.y = -5;
+    scene.add(heart);
+
+    // === 3. DẢI NGÂN HÀ ===
+    const galaxyGroup = new THREE.Group();
+    scene.add(galaxyGroup);
+    galaxyGroup.position.y = -15;
+
+    const galaxyRadius = 28;
+    const galaxyThickness = 12;
+    const pixelParticlesCount = 5000;
+    const pixelPositions = [];
+    for (let i = 0; i < pixelParticlesCount; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = galaxyRadius + (Math.random() - 0.5) * galaxyThickness;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const y = (Math.random() - 0.5) * 4;
+        pixelPositions.push(x, y, z);
+    }
+    const pixelGeometry = new THREE.BufferGeometry();
+    pixelGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pixelPositions, 3));
+    const pixelMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending });
+    const pixelSystem = new THREE.Points(pixelGeometry, pixelMaterial);
+    galaxyGroup.add(pixelSystem);
+
+    // === 4. LỜI CHÚC NGẪU NHIÊN ===
+    const fontLoader = new THREE.FontLoader();
+    const messages = [
+        "Chúc em 20/10 vui vẻ 💐",
+        "Linh Ngân dễ thương xinh đẹp 🌸",
+        "Thương em 💞",
+        "Em mãi là em bé của anh 💖",
+        "I love you ❤️"
+    ];
+    const textPivots = [];
+
+    function bendTextGeometry(geometry, radius) {
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < position.count; i++) {
+            vertex.fromBufferAttribute(position, i);
+            const angle = vertex.x / radius;
+            const x = Math.cos(angle) * radius;
+            const z = -Math.sin(angle) * radius;
+            position.setXYZ(i, x, vertex.y, z);
+        }
+        position.needsUpdate = true;
+    }
+
+    fontLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/gentilis_bold.typeface.json', function (font) {
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffc0cb, transparent: true, opacity: 0 });
+        messages.forEach((msg, i) => {
+            const textGeo = new THREE.TextGeometry(msg, {
+                font: font,
+                size: 2,
+                height: 0.1,
+            });
+            textGeo.center();
+
+            const textOrbitRadius = galaxyRadius - 5 + Math.random() * 10;
+            bendTextGeometry(textGeo, textOrbitRadius);
+            const textMesh = new THREE.Mesh(textGeo, textMaterial.clone());
+            textMesh.userData = {
+                visibleTime: Math.random() * 3,
+                delay: Math.random() * 4 + 1
+            };
+
+            const pivot = new THREE.Group();
+            const randomAngle = (i / messages.length) * Math.PI * 2 + Math.random() * 0.5;
+            pivot.rotation.y = randomAngle;
+            pivot.position.y = -2 + Math.random() * 4;
+            pivot.add(textMesh);
+            textPivots.push({ pivot, mesh: textMesh });
+            galaxyGroup.add(pivot);
+        });
+    });
+
+    // === 5. SAO BĂNG NGẪU NHIÊN BAY TỪ TRÁI QUA PHẢI ===
+    const shootingStars = [];
+
+    function createShootingStar() {
+        const startX = -60 + Math.random() * 20;
+        const startY = Math.random() * 40 - 10;
+        const startZ = Math.random() * 40 - 20;
+        const velocityX = 25;
+        const velocityY = -2 - Math.random() * 2;
+        const velocityZ = -2 + Math.random() * 4;
+        const star = {
+            position: new THREE.Vector3(startX, startY, startZ),
+            velocity: new THREE.Vector3(velocityX, velocityY, velocityZ),
+            life: 0, duration: 4, trail: [], points: null
+        };
+        const geometry = new THREE.BufferGeometry();
+        const material = new THREE.PointsMaterial({
+            color: 0x87cefa, size: 0.25, transparent: true,
+            opacity: 1, blending: THREE.AdditiveBlending
+        });
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
+        star.points = new THREE.Points(geometry, material);
+        scene.add(star.points);
+        shootingStars.push(star);
+    }
+
+    // === 7. MƯA HẠT SÁNG ===
+    const rainCount = 80000;
+    const rainPositions = [];
+    const rainVelocities = [];
+    const rainBounds = { x: 150, y: 100, z: 150 };
+    for (let i = 0; i < rainCount; i++) {
+        rainPositions.push(
+            (Math.random() - 0.5) * rainBounds.x,
+            (Math.random() - 0.5) * rainBounds.y,
+            (Math.random() - 0.5) * rainBounds.z
+        );
+        rainVelocities.push(2 + Math.random() * 3);
+    }
+    const rainGeometry = new THREE.BufferGeometry();
+    rainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(rainPositions, 3));
+    const rainMaterial = new THREE.PointsMaterial({
+        color: 0xcccccc, size: 0.08, transparent: true,
+        opacity: 0.6, blending: THREE.AdditiveBlending
+    });
+    const rain = new THREE.Points(rainGeometry, rainMaterial);
+    scene.add(rain);
+
+    // === 6. HOẠT ẢNH ===
+    const clock = new THREE.Clock();
+    const baseParticleSize = 0.1, pulseSpeed = 2.0, pulseAmplitude = 0.05;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        const elapsed = clock.getElapsedTime();
+
+        TWEEN.update(); // CẬP NHẬT HOẠT ẢNH TWEEN
+
+        // Tim đập
+        const pulse = (Math.sin(elapsed * pulseSpeed) + 1) / 2;
+        heartMaterial.size = baseParticleSize + pulse * pulseAmplitude;
+        heartMaterial.opacity = 0.5 + ((Math.sin(elapsed * 2) + 1) / 2) * 0.5;
+        heart.position.z = Math.sin(elapsed * 1.2) * 3;
+        galaxyGroup.rotation.y += delta * 0.15;
+
+        // Lời chúc
+        textPivots.forEach(({ mesh }) => {
+            mesh.userData.visibleTime += delta;
+            const cycle = 5;
+            const t = mesh.userData.visibleTime % (cycle + mesh.userData.delay);
+            if (t < 1) mesh.material.opacity = t;
+            else if (t < 4) mesh.material.opacity = 1;
+            else if (t < 5) mesh.material.opacity = 1 - (t - 4);
+            else mesh.material.opacity = 0;
+        });
+        
+        // Mưa rơi
+        const rainPosArray = rain.geometry.attributes.position.array;
+        for (let i = 0; i < rainCount; i++) {
+            const yIndex = i * 3 + 1;
+            const speed = rainVelocities[i];
+            rainPosArray[yIndex] -= speed * delta;
+            if (rainPosArray[yIndex] < -rainBounds.y / 2) {
+                rainPosArray[yIndex] = rainBounds.y / 2;
+            }
+        }
+        rain.geometry.attributes.position.needsUpdate = true;
+
+        // Sao băng
+        if (Math.random() < 0.025) createShootingStar();
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+            const star = shootingStars[i];
+            star.life += delta;
+            if (star.life > 2) star.velocity.multiplyScalar(0.96);
+            star.position.addScaledVector(star.velocity, delta);
+            star.trail.unshift(star.position.clone());
+            const maxTrail = 40;
+            let currentTrailLength = Math.max(1, Math.floor(maxTrail * Math.max(0, 1 - (star.life - 2) / 2)));
+            if (star.trail.length > currentTrailLength) star.trail.pop();
+            const trailPositions = [];
+            star.trail.forEach(p => trailPositions.push(p.x, p.y, p.z));
+            star.points.geometry.setAttribute('position', new THREE.Float32BufferAttribute(trailPositions, 3));
+            star.points.geometry.attributes.position.needsUpdate = true;
+            star.points.material.opacity = Math.max(0, 1 - (star.life - 2) / 2);
+            if (star.life > star.duration) {
+                scene.remove(star.points);
+                shootingStars.splice(i, 1);
+            }
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+</script>
+</body>
+</html>
